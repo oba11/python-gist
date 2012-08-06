@@ -12,5 +12,10 @@ Todo
 * Deleting gists
 * Listing gists
 
-* Getting an OAuth token using a username and password first - more console friendly
 * Reading gist from stdin
+* Refactor token handling
+
+
+* *Done* - Getting an OAuth token using a username and password first - more console friendly
+* *Done* - Getting token from existing authorisation
+* *Done* - Getting token

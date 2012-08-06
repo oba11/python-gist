@@ -25,3 +25,10 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+
+#VS2010 files
+*.suo
+
+#App config files
+*.cfg
+

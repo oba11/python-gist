@@ -3,8 +3,7 @@
 	<title>Python Gists script</title>
 	<script type="text/javascript">
 		var code = window.location.toString().split("?code=")[1].split("&")[0];
-		document.getElementById('code').innerHTML = code;
-
+		window.setTimeout("document.getElementById('code').innerHTML = '<b>'+code+'</b>'",100);
 	</script>
 </head>
 <body>

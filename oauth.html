@@ -2,9 +2,14 @@
 <head>
 	<title>Python Gists script</title>
 	<script type="text/javascript">
-		alert(window.location);
+		var code = window.location.toString().split("?code=")[1].split("&")[0];
+		document.getElementById('code').innerHTML = code;
+
 	</script>
 </head>
 <body>
+<h2>Authorising python-gists</h2>
+<p>Please copy and paste the following code into the python-gists window that you probably have open: <div id="code">code should be here.</div></p>
+<p>If there's no code there, something's gone wrong with my javascript. Either take the value after ?code= in the URL in your address bar, or try the manual method in python-gists (requires GitHub username &amp; password)</p>
 </body>
 </html>

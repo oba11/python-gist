@@ -6,6 +6,7 @@ import atexit
 import ConfigParser
 import getpass
 
+import json
 try:
     import requests
 except ImportError:
@@ -37,7 +38,7 @@ class gist(object):
 
         self.config = ConfigParser.RawConfigParser()
         self.config.read([self.OAUTH_CONFIG_FILENAME])
-        self.config.filehandle = open(self.OAUTH_CONFIG_FILENAME,'r+')
+        self.config.filehandle = open(self.OAUTH_CONFIG_FILENAME,'a')
         
         if not self.config.has_section('Credentials'):
             self.config.add_section('Credentials')
@@ -99,7 +100,7 @@ class gist(object):
 
         response = requests.get('https://api.github.com/authorizations', auth=(username, password))
 
-        if response.status_code==200:
+        if response.ok:
             token_response = self.get_existing_token(response)
             if token_response is not None:
                print "Downloaded your existing token, I'm ready to go"
@@ -113,28 +114,28 @@ class gist(object):
     
     def get_existing_token(self, response):
         for auth_dictionary in response.json:
-            if auth_dictionary['app']['name'] == 'python-gist':
+            if 'python-gist' in auth_dictionary['app']['name']:
                 self.config.set('Credentials', 'client_token', auth_dictionary['token'])
                 self.ClientToken = auth_dictionary['token']
                 self.config.write(self.config.filehandle)
                 print "Found existing auth token"
                 return self.ClientToken
-            return None
+        return None
         
     def get_new_token(self,cached_credentials):
         headers = {'accept': 'application/json'}
         payload = {'scopes': 'gist', 'note': 'Requested by python-gist', 'note_url': 'http://github.com/voltagex/python-gist'}
-        response = requests.post('https://api.github.com/authorizations', auth=cached_credentials, data=payload, headers=headers)
+        response = requests.post('https://api.github.com/authorizations', auth=cached_credentials, data=json.dumps(payload), headers=headers)
         
-        if response.status_code == 200:
+        if response.ok:
             self.ClientToken = response.json['token']
             return self.ClientToken
-                    
+        else:
+            str.format("Couldn't get client token - {0}: {1}", response.status_code, response.text) #yes, this is likely to be a json response but I want to make sure I see the error            
     def cleanup(self):
-        #FIX ConfigParser.NoSectionError: No section: 'Credential'
-        self.config.set('Credential', 'ClientID', self.ClientID)
-        self.config.set('Credential', 'ClientSecret', self.ClientSecret)
-        self.config.set('Credential', 'ClientToken', self.ClientToken)
+        self.config.set('Credentials', 'ClientID', self.ClientID)
+        self.config.set('Credentials', 'ClientSecret', self.ClientSecret)
+        self.config.set('Credentials', 'ClientToken', self.ClientToken)
         self.config.write(self.config.filehandle)
         
         self.config.filehandle.flush()

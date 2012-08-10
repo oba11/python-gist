@@ -13,10 +13,18 @@ Todo
 * Listing gists
 
 * *Done* - Reading gist from stdin
-* Refactor token handling
-* Refactor authentication into module
-
+    * Handle ^D and ^C on all platforms
+* *Done* - Refactor token handling
+* *Done* - Refactor authentication into module
+    * Write tests!
 
 * *Done* - Getting an OAuth token using a username and password first - more console friendly
 * *Done* - Getting token from existing authorisation
 * *Done* - Getting token
+
+* *Done* - config handling
+    * Config seems to be appending at odd times
+	
+* Command line arguments
+* Logging?
+* Documentation

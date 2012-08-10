@@ -7,6 +7,7 @@ import ConfigParser
 import getpass
 
 import json
+
 try:
     import requests
 except ImportError:
@@ -51,7 +52,10 @@ class gist(object):
             self.choose_authmethod()
         else:
             print "Loaded saved access token, I'm good to go."
-        
+            
+        auth_header = {"Authorization": str.format("token {0}",self.ClientToken)}
+        self.github_request = requests.Session(headers=auth_header, verify=True)
+
     def authorise_web(self):
         if self.ClientToken is None:
             if (self.ClientID or self.ClientSecret) is None:
@@ -104,8 +108,10 @@ class gist(object):
             token_response = self.get_existing_token(response)
             if token_response is not None:
                print "Downloaded your existing token, I'm ready to go"
+               return
             else:
                 self.get_new_token((username,password))
+                return
         elif response.status_code==401:
             print "Username or password incorrect, try again."
             self.authorise_password()
@@ -132,6 +138,25 @@ class gist(object):
             return self.ClientToken
         else:
             str.format("Couldn't get client token - {0}: {1}", response.status_code, response.text) #yes, this is likely to be a json response but I want to make sure I see the error            
+
+    def post_gist(self,description="Posted by python-gist", public=False, gist_files=None, content=None):
+        if content is not None:
+            files = {"python-gist-post.txt": {"content": content}}
+        elif gist_files is not None: 
+            files = gist_files 
+        else:
+            raise("Either content or gist_files must be set")
+        payload = {
+                    "description": description,
+                    "public": public,
+                    "files": files,
+                   }
+        response = self.github_request.post("https://api.github.com/gists", data=json.dumps(payload))
+        if response.ok:
+            return val.json['html_url']
+        else: print "Error " + val.text
+        return
+    
     def cleanup(self):
         self.config.set('Credentials', 'ClientID', self.ClientID)
         self.config.set('Credentials', 'ClientSecret', self.ClientSecret)
@@ -148,8 +173,6 @@ if __name__ == "__main__":
         return None
     ConfigParser.RawConfigParser.get_quiet = get_quiet
     
-
-
-
-    test = gist()
-    raw_input()
+gist = gist()
+if (sys.stdin):
+    print gist.post_gist(content=sys.stdin.readlines())

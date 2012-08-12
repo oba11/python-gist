@@ -20,6 +20,9 @@ import json
 from github_auth import GitHubAuth
 
 class Gist(object):
+    """
+    Methods for working with GitHub Gists
+    """
     OAUTH_CONFIG_FILENAME = 'oauth.cfg'
     CONFIG_FILENAME = 'defaults.cfg'
     
@@ -38,6 +41,9 @@ class Gist(object):
         else: self.choose_authmethod()
 
     def __init__(self):
+        """
+        Read and set up config, set up authentication
+        """
         atexit.register(self.cleanup)
 
         self.config = ConfigParser.RawConfigParser()
@@ -59,15 +65,37 @@ class Gist(object):
         #    print "Loaded saved access token, I'm good to go." 
     
     def authorise_web(self):
+        """
+        Authorise this script via web browser
+        """
         return self.auth.authorise_web(self, redir=self.redir_url, scopes="gist")
 
     def authorise_password(self):
+        """
+        Authorise this script via GitHub username and password
+        """
         username = raw_input("Please enter your username: ")
         password = getpass.getpass("Please enter your password: ")
         return self.auth.authorise_password(username, password)
 
 
     def post_gist(self, description="Posted by python-gist", public=False, gist_files=None, content=None):
+        """
+        Post a gist, either single text string or a dictionary of files in the form of
+        {"filename.ext": {"content": "some text"}}
+
+        :param description: Gist description
+        :type: str.
+        
+        :param public: Post a public or private Gist 
+        :type: bool.
+        
+        :param gist_files: dictionary of files for Gist
+        :type: dict.
+        
+        :param content: string content for Gist
+        :type: str.
+        """
         if content is not None:
             files = {"python-gist-post.txt": {"content": content}}
         elif gist_files is not None: 
@@ -82,10 +110,14 @@ class Gist(object):
         response = self.auth.get_session(self.client_token).post("https://api.github.com/gists", data=json.dumps(payload))
         if response.ok:
             return response.json['html_url']
-        else: print "Error " + response.text
-        return
+        else: 
+            print "Error " + response.text
+            return
     
     def cleanup(self):
+        """
+        Cleanup, set config and flush before exisiting
+        """
         self.config.set('Credentials', 'Client_ID', self.client_id)
         self.config.set('Credentials', 'Client_Secret', self.client_secret)
         self.config.set('Credentials', 'Client_Token', self.client_token)
@@ -104,4 +136,3 @@ if __name__ == "__main__":
 gist = Gist()
 if (sys.stdin):
     print gist.post_gist(content=sys.stdin.readlines())
-    raw_input()

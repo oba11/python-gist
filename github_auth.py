@@ -1,4 +1,4 @@
-import sys, os, subprocess
+import webbrowser
 
 try:
     import requests
@@ -126,14 +126,4 @@ class GitHubAuth(object):
                            "with your default browser to authorise this script on GitHub, \
                             otherwise hit ctrl/command-C now"
         raw_input(friendly_message)
-
-        #from http://stackoverflow.com/questions/1795111/is-there-a-cross-platform-way-to-open-a-file-browser-in-python
-        if sys.platform =='win32':
-            os.startfile(url)
-        elif sys.platform == 'darwin':
-            subprocess.Popen(['open', url])
-        else:
-            try:
-                subprocess.Popen(['xdg-open', url])
-            except OSError:
-                str.format("Couldn't open a browser on your system ({0}), please go to {1}",sys.platform,url)
+        webbrowser.open_new_tab(url)

@@ -27,11 +27,19 @@ class Gist(object):
     CONFIG_FILENAME = 'defaults.cfg'
     
     def choose_authmethod(self):
-        choice = raw_input('Please select an authorisation method.\r\n \
-                            1. Open a web browser, cut and paste the access token.\r\n \
-                            2. Use your GitHub username and password to get a token automagically.\r\n \
-                            (Default is 2): ')
+        choice = None
+        try:
+
+            choice = raw_input('Please select an authorisation method.\r\n \
+                                1. Open a web browser, cut and paste the access token.\r\n \
+                                2. Use your GitHub username and password to get a token automagically.\r\n \
+                                (Default is 2): ')
+        except EOFError:
+            pass
+        if not choice:
+            choice = raw_input()
         choice = choice.strip()
+
         if choice == '2' or choice == '':
             self.authorise_password() 
             return
@@ -57,10 +65,18 @@ class Gist(object):
         self.client_id = self.config.get_quiet('Credentials', 'client_id')
         self.client_secret = self.config.get_quiet('Credentials', 'client_secret')
         self.redir_url = "http://voltagex.github.com/python-gists/oauth.html"
+
+        if (self.client_token is None or self.client_id is None) and sys.stdin.isatty():
+            self.choose_authmethod()
+        elif not sys.stdin.isatty():
+            print "Sorry, can't accept anything on stdin until I have some GitHub credentials to work with"
+            sys.exit(1)
         self.auth = GitHubAuth("python-gist", "http://github.com/voltagex/python-gist", self.client_id, self.client_secret)
 
-        if self.client_token is None:
-            self.choose_authmethod()
+
+
+
+
         #else:
         #    print "Loaded saved access token, I'm good to go." 
     

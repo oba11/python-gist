@@ -22,6 +22,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="configpaths.py" />
     <Compile Include="github_auth.py" />
     <Compile Include="python-gist.py" />
   </ItemGroup>

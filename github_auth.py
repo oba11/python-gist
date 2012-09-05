@@ -15,8 +15,7 @@ import json
 
 class GitHubAuth(object):
     """Class handling authentication to GitHub via OAuth/token request"""
-    def __init__(self, app_name = None, app_url = None, client_id = None, 
-                 client_secret = None, username = None, password = None):
+    def __init__(self, **kwargs): #app_name = None, app_url = None, client_id = None,  client_secret = None, username = None, password = None):    
         """ Initialise a GitHubAuth object
             Note either client_id and client_secret for OAuth or
             username and password for token request via basic auth
@@ -40,13 +39,13 @@ class GitHubAuth(object):
             :param password: Password for basic auth/token request
             :type password: str.          
         """
-        self.app_name = app_name
-        self.app_url = app_url
-        self.client_id = client_id
-        self.client_secret = client_secret
+        self.app_name = kwargs.get('app_name')
+        self.app_url = kwargs.get('app_url')
+        self.client_id = kwargs.get('client_id')
+        self.client_secret = kwargs.get('client_secret')
         #todo, probably need to handle clienttoken here too
-        self.username = username
-        self.password = password
+        self.username = kwargs.get('username')
+        self.password = kwargs.get('password')
         self.session = None
 
     def get_session_simple(self, scopes, token_auth_callback=None, username=None, password=None):
@@ -109,6 +108,10 @@ class GitHubAuth(object):
                               authorization_url='oauth/authorize', 
                               token_url='oauth/access_token')
         auth_url = auth_handler.authorize_url(scopes)
+
+        if callback_function is None:
+            callback_function = self.console_authorise_callback
+
         code = callback_function(auth_url)
 
         if code != None:

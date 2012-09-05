@@ -1,5 +1,5 @@
 import atexit
-
+import configpaths
 import ConfigParser
 import getpass
 import sys
@@ -23,17 +23,12 @@ class Gist(object):
     """
     Methods for working with GitHub Gists
     """
-    OAUTH_CONFIG_FILENAME = 'oauth.cfg'
-    CONFIG_FILENAME = 'defaults.cfg'
-    
+    OAUTH_CONFIG_FILENAME = configpaths.get_config_path('python-gists','oauth.cfg')
+  
     def choose_authmethod(self):
         choice = None
         try:
-
-            choice = raw_input('Please select an authorisation method.\r\n \
-                                1. Open a web browser, cut and paste the access token.\r\n \
-                                2. Use your GitHub username and password to get a token automagically.\r\n \
-                                (Default is 2): ')
+            choice = raw_input('Please select an authorisation method.\r\n \t1. Open a web browser, cut and paste the access token.\r\n \t2. Use your GitHub username and password to get a token automagically.\r\n \t(Default is 2): ')
         except EOFError:
             pass
         if not choice:
@@ -63,17 +58,19 @@ class Gist(object):
 
         self.client_token = self.config.get_quiet('Credentials', 'client_token')
         self.client_id = self.config.get_quiet('Credentials', 'client_id')
+        if self.client_id is None:
+            self.client_id = "6aa08c7fa4d67e09a26f" #todo, don't do this.
         self.client_secret = self.config.get_quiet('Credentials', 'client_secret')
-        self.redir_url = "http://voltagex.github.com/python-gists/oauth.html"
+        self.redir_url = "http://voltagex.github.com/python-gist/oauth.html"
+
+        self.auth = GitHubAuth(app_name="python-gist", app_url="http://github.com/voltagex/python-gist", client_id=self.client_id, client_secret=self.client_secret)
 
         if (self.client_token is None or self.client_id is None) and sys.stdin.isatty():
             self.choose_authmethod()
         elif not sys.stdin.isatty():
             print "Sorry, can't accept anything on stdin until I have some GitHub credentials to work with"
             sys.exit(1)
-        self.auth = GitHubAuth("python-gist", "http://github.com/voltagex/python-gist", self.client_id, self.client_secret)
-
-
+       
 
 
 
@@ -84,7 +81,7 @@ class Gist(object):
         """
         Authorise this script via web browser
         """
-        return self.auth.authorise_web(self, redir=self.redir_url, scopes="gist")
+        return self.auth.authorise_web(redir=self.redir_url, scopes="gist")
 
     def authorise_password(self):
         """
@@ -129,7 +126,7 @@ class Gist(object):
         else: 
             print "Error " + response.text
             return
-    
+
     def cleanup(self):
         """
         Cleanup, set config and flush before exisiting

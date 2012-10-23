@@ -14,7 +14,7 @@ def get_config_path(appname,config_filename=''):
     elif sys.platform == 'win32':
         appdata = os.path.join(os.environ['APPDATA'], appname, config_filename)
 
-    elif os.environ['XDG_CONFIG_HOME']:
+    elif os.environ.has_key('XDG_CONFIG_HOME'):
         appdata = os.path.join(os.environ['XDG_CONFIG_HOME'], appname, config_filename)
     else:
         appdata = os.path.expanduser(path.join('~', '.' + appname, config_filename))

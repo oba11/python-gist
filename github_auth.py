@@ -73,7 +73,7 @@ class GitHubAuth(object):
         if token is not None:
             return self.get_session(token)
         else:
-            raise('Could not get token, please check your credentials')
+            raise(Exception('Could not get token, please check your credentials'))
          #todo: more checks
     
     def get_session(self, token):
@@ -140,7 +140,7 @@ class GitHubAuth(object):
             else:
                 return self.get_new_token(scopes, (username, password))
         elif response.status_code == 401:
-            raise("Username or password incorrect, try again.")
+            raise(Exception("Username or password incorrect, try again."),'AuthenticationError')
     
     def get_existing_token(self, response):
         """
@@ -170,7 +170,7 @@ class GitHubAuth(object):
         if response.ok:
             return response.json['token']
         else:
-            raise(str.format("Couldn't get client token - {0}: {1}", response.status_code, response.text)) #yes, this is likely to be a json response but I want to make sure I see the error    
+            raise(Exception(str.format("Couldn't get client token - {0}: {1}", response.status_code, response.text)),'AuthenticationError') #yes, this is likely to be a json response but I want to make sure I see the error    
 
     def console_authorise_callback(self, auth_url):
         """

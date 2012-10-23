@@ -17,7 +17,7 @@ def get_config_path(appname,config_filename=''):
     elif os.environ.has_key('XDG_CONFIG_HOME'):
         appdata = os.path.join(os.environ['XDG_CONFIG_HOME'], appname, config_filename)
     else:
-        appdata = os.path.expanduser(path.join('~', '.' + appname, config_filename))
+        appdata = os.path.expanduser(os.path.join('~', '.' + appname, config_filename))
 
     configpath = os.path.dirname(appdata)
     if not os.path.exists(configpath):

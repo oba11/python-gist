@@ -67,7 +67,8 @@ class Gist(object):
 
 		if (self.client_token is None or self.client_id is None) and sys.stdin.isatty():
 			self.choose_authmethod()
-		elif not sys.stdin.isatty():
+
+		elif not sys.stdin.isatty() and self.client_id is None:
 			print "Sorry, can't accept anything on stdin until I have some GitHub credentials to work with"
 			sys.exit(1)
 

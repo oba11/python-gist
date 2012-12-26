@@ -5,7 +5,7 @@ import ConfigParser
 import getpass
 import sys
 import optparse
-
+import os
 
 try:
 	import requests
@@ -60,9 +60,12 @@ class Gist(object):
 
 		self.client_token = self.config.get_quiet('Credentials', 'client_token')
 		self.client_id = self.config.get_quiet('Credentials', 'client_id')
+		if self.client_id is None:
+			self.client_id = "6aa08c7fa4d67e09a26f" #todo, don't do this.
 		self.client_secret = self.config.get_quiet('Credentials', 'client_secret')
+		self.redir_url = "http://voltagex.github.com/python-gist/oauth.html"
 
-		self.auth = GitHubAuth(app_name="python-gist", app_url="http://github.com/amitsaha/python-gist", \
+		self.auth = GitHubAuth(app_name="python-gist", app_url="http://github.com/voltagex/python-gist", \
 					       client_id=self.client_id, client_secret=self.client_secret)
 
 		if (self.client_token is None or self.client_id is None) and sys.stdin.isatty():
@@ -96,7 +99,6 @@ class Gist(object):
 			sys.exit(0)
 		except Exception as ex:
 			print ex.message
-			print
 			self.choose_authmethod()
 
 	def post_gist(self, description, public, gist_files, content):
@@ -195,10 +197,16 @@ if opts.__dict__['files']:
 
 	print 'Uploading files..'
 
+
 else:
+	if sys.platform == 'win32':
+		exit_char = '^Z'
+	else:
+		exit_char = '^D'
+
 	print 'Enter your Gist contents'
 	print '***********************'
-	print '****^D  when done******'
+	print '****',exit_char,'when done ****'
 	content=sys.stdin.readlines()
 
 # Upload gist

@@ -1,3 +1,9 @@
+***NOTE: Currently to use this script with __OAuth__, you'll have to add your own application in your GitHub profile 
+and add the client ID and client secret to the config. I've been advised not to distribute the client secret in open source code - 
+therefore I'll need to build a workaround, probably an OAuth proxy.
+
+For now, your username and password will work to get the same token that's created at the end of the OAuth process***
+
 python-gists
 ============
 
@@ -36,12 +42,12 @@ Usage
 
 Todos
 =====
-
+* OAuth proxy
 * Code refactoring
 * Make the script installable
 * External editor? 
 
 Thanks
 ======
-Thanks to Voltagex for having the OAuth part already setup. This gave me
-a very good platform to finally implement the other features.
+* Amit Saha, for adding a whole lot of features
+* HaveF, for telling me that my OAuth implementation was completely broken

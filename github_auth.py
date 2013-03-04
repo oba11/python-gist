@@ -43,7 +43,7 @@ class GitHubAuth(object):
         self.app_url = kwargs.get('app_url')
         self.client_id = kwargs.get('client_id')
         self.client_secret = kwargs.get('client_secret')
-        #todo, probably need to handle clienttoken here too
+        self.client_token = kwargs.get('client_token')
         self.username = kwargs.get('username')
         self.password = kwargs.get('password')
         self.session = None
@@ -118,9 +118,11 @@ class GitHubAuth(object):
 
         code = callback_function(auth_url)
 
-        if code != None:
+        if code is not None:
+            self.client_token = code
             return code
-        else: raise('Could not get OAuth authorisation code')
+        else:
+            raise Exception('Could not get OAuth authorisation code')
 
     def authorise_password(self, scopes, username, password):
         """
@@ -172,7 +174,7 @@ class GitHubAuth(object):
         response = requests.post('https://api.github.com/authorizations', auth=cached_credentials, data=json.dumps(payload), headers=headers)
 
         if response.ok:
-            return response.json['token']
+            return self.exchange_token(response.json()['token'])
         else:
             raise(Exception(str.format("Couldn't get client token - {0}: {1}", response.status_code, response.text)),'AuthenticationError') #yes, this is likely to be a json response but I want to make sure I see the error
 
@@ -185,7 +187,18 @@ class GitHubAuth(object):
         """
         self.openbrowser(auth_url)
         code = raw_input('OK, if you have a code from the webpage, please enter it here: ')
-        return code
+        return self.exchange_token(code)
+
+    def exchange_token(self,first_token):
+        required_info={
+            'client_id': self.client_id,
+            'client_secret': self.client_secret,
+            'code': first_token
+        }
+        response = requests.post("https://github.com/login/oauth/access_token", data=json.dumps(required_info),headers = {'accept': 'application/json', 'content-type': 'application/json'})
+        if 'error' in response.json():
+            raise Exception("Couldn't get an access token from GitHub, please try authorising this script again.")
+        return response.json()['access_token']
 
     def openbrowser(self, url):
         """

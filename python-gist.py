@@ -78,7 +78,7 @@ class Gist(object):
         if (self.client_token is None or self.client_id is None) and sys.stdin.isatty():
             self.choose_authmethod()
         elif self.client_id is not None and self.client_token is None and sys.gettrace() is not None: #in a debugger, have OAuth creds
-            self.authorise_web()
+            self.client_token = self.authorise_web()
         elif not sys.stdin.isatty() and self.client_id is None:
             # In case a pipe is trying to write to us
             print "Sorry, can't accept anything on stdin until I have some GitHub credentials to work with"
@@ -91,7 +91,8 @@ class Gist(object):
         """
         Authorise this script via web browser
         """
-        return self.auth.authorise_web(redir=self.redir_url, scopes="gist")
+        self.client_token = self.auth.authorise_web(redir=self.redir_url, scopes="gist")
+        return  self.client_token
 
     def authorise_password(self):
         """
@@ -139,12 +140,12 @@ class Gist(object):
         }
 
         authorised_client = self.auth.get_session(self.client_token)
-        if sys.gettrace() is not None:
-            authorised_client.proxies = {"https": "http://127.0.0.1:8888"}
+        # if sys.gettrace() is not None:
+        #     authorised_client.proxies = {"https": "http://127.0.0.1:8888"}
         response = authorised_client.post("https://api.github.com/gists", data=json.dumps(payload))
 
         if response.ok:
-            return response.json['html_url']
+            return response.json()['html_url']
         else:
             print "Error " + response.text
             return

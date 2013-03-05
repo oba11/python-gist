@@ -52,7 +52,7 @@ class Gist(object):
         """
         Read and set up config, set up authentication
         """
-        atexit.register(self.cleanup)
+        atexit.register(self.save_configuration)
         self.client_secret = None #allow cleanup to run even if we don't finish __init__
 
         self.config = ConfigParser.RawConfigParser()
@@ -92,6 +92,7 @@ class Gist(object):
         Authorise this script via web browser
         """
         self.client_token = self.auth.authorise_web(redir=self.redir_url, scopes="gist")
+        self.save_configuration() #atexit seems to not be firing.
         return  self.client_token
 
     def authorise_password(self):
@@ -140,8 +141,6 @@ class Gist(object):
         }
 
         authorised_client = self.auth.get_session(self.client_token)
-        # if sys.gettrace() is not None:
-        #     authorised_client.proxies = {"https": "http://127.0.0.1:8888"}
         response = authorised_client.post("https://api.github.com/gists", data=json.dumps(payload))
 
         if response.ok:
@@ -150,7 +149,7 @@ class Gist(object):
             print "Error " + response.text
             return
 
-    def cleanup(self):
+    def save_configuration(self):
         """
         Cleanup, set config and flush before exiting
         """
@@ -180,7 +179,7 @@ if __name__ == "__main__":
     def get_quiet(self, section, value):
         if self.has_option(section, value):
             data = self.get(section,value)
-            if str.strip(data) != '':
+            if data.strip() != '':
                 return data
         return None
     ConfigParser.RawConfigParser.get_quiet = get_quiet

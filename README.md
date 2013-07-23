@@ -1,11 +1,8 @@
-***NOTE: Currently to use this script with __OAuth__, you'll have to add your own application in your GitHub profile 
-and add the client ID and client secret to the config. I've been advised not to distribute the client secret in open source code - 
-therefore I'll need to build a workaround, probably an OAuth proxy. For now, your username and password will work to get the same token that's created at the end of the OAuth process***
-
-python-gists
+python-gist
 ============
 
 A command line GitHub gist posting application in Python. 
+As of July 2013, this uses API tokens.
 
 Usage
 =====
@@ -38,10 +35,14 @@ Usage
 	Uploading files..
 	https://gist.github.com/b766c2becf1874b1665b
 
+Removal
+====
+Delete the API token that python-gists requested from https://github.com/settings/applications
+Delete the oauth.cfg file (%AppData%\python-gist on Windows, ~/.config/python-gist on *nix)
+
 Todos
 =====
-* OAuth proxy
-* Code refactoring
+* Add an option to deauthorise the script
 * Make the script installable
 * External editor? 
 
@@ -49,3 +50,4 @@ Thanks
 ======
 * Amit Saha, for adding a whole lot of features
 * HaveF, for telling me that my OAuth implementation was completely broken
+* The author of https://help.github.com/articles/creating-an-oauth-token-for-command-line-use

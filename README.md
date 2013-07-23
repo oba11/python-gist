@@ -2,6 +2,7 @@ python-gist
 ============
 
 A command line GitHub gist posting application in Python. 
+
 As of July 2013, this uses API tokens.
 
 Usage
@@ -38,6 +39,7 @@ Usage
 Removal
 ====
 Delete the API token that python-gists requested from https://github.com/settings/applications
+
 Delete the oauth.cfg file (%AppData%\python-gist on Windows, ~/.config/python-gist on *nix)
 
 Todos

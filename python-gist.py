@@ -10,43 +10,17 @@ import os
 try:
     import requests
 except ImportError:
-    print "Please pip install requests (and probably requests_oauth2)"
-    sys.exit(1)
-try:
-    from requests_oauth2 import OAuth2
-except ImportError:
-    print "Please pip install requests_oauth2"
+    print "Please pip install requests"
     sys.exit(1)
 
 import json
-
 from github_auth import GitHubAuth
-
 
 class Gist(object):
     """
     Methods for working with GitHub Gists
     """
     OAUTH_CONFIG_FILENAME = configpaths.get_config_path('python-gist', 'oauth.cfg')
-
-    def choose_authmethod(self):
-        choice = None
-        try:
-            choice = raw_input(
-                'Please select an authorisation method.\r\n \t 1. Open a web browser, cut and paste the access token.\r\n \t2. Use your GitHub username and password to get a token automagically.\r\n \t(Default is 2): ')
-        except EOFError:
-            pass
-
-        choice = choice.strip()
-
-        if choice == '2' or not choice:
-            self.authorise_password()
-            return
-        if choice == '1':
-            self.authorise_web()
-            return
-        else:
-            self.choose_authmethod()
 
     def __init__(self):
         """
@@ -63,37 +37,17 @@ class Gist(object):
             self.config.add_section('Credentials')
 
         self.client_token = self.config.get_quiet('Credentials', 'client_token')
-        self.client_id = self.config.get_quiet('Credentials', 'client_id')
-        if self.client_id is None or self.client_id == 'YOUR_DEVELOPER_CREDS_HERE':
-            print "Both GitHub and Bitbucket don't like OAuth credentials being stored in source. " \
-                  "Please sign up for a client ID, then save it in " + self.OAUTH_CONFIG_FILENAME
-            sys.exit(1)
-        self.client_secret = self.config.get_quiet('Credentials', 'client_secret')
-        self.redir_url = "http://voltagex.github.com/python-gist/oauth.html"
-
-        self.auth = GitHubAuth(app_name="python-gist", app_url="http://github.com/voltagex/python-gist", \
-                               client_id=self.client_id, client_secret=self.client_secret)
+        self.auth = GitHubAuth(app_name="python-gist", app_url="http://github.com/voltagex/python-gist")
 
         #todo, this logic sucks.
-        if (self.client_token is None or self.client_id is None) and sys.stdin.isatty():
-            self.choose_authmethod()
-        elif self.client_id is not None and self.client_token is None and sys.gettrace() is not None: #in a debugger, have OAuth creds
-            self.client_token = self.authorise_web()
-        elif not sys.stdin.isatty() and self.client_id is None:
+        if (self.client_token is None) and sys.stdin.isatty():
+            self.authorise_password()
+        elif not sys.stdin.isatty() and self.client_token is None:
             # In case a pipe is trying to write to us
             print "Sorry, can't accept anything on stdin until I have some GitHub credentials to work with"
             sys.exit(1)
-
         else:
             print "Loaded saved access token, I'm good to go."
-
-    def authorise_web(self):
-        """
-        Authorise this script via web browser
-        """
-        self.client_token = self.auth.authorise_web(redir=self.redir_url, scopes="gist")
-        self.save_configuration() #atexit seems to not be firing.
-        return  self.client_token
 
     def authorise_password(self):
         """
@@ -109,7 +63,6 @@ class Gist(object):
             sys.exit(0)
         except Exception as ex:
             print ex.message
-            self.choose_authmethod()
 
     def post_gist(self, description, public, gist_files, content):
         """
@@ -155,21 +108,9 @@ class Gist(object):
         """
         #recheck the config file in case it's changed during runtime
         current_token = self.config.get_quiet('Credentials','client_token')
-        current_id = self.config.get_quiet('Credentials','client_id')
-        current_secret = self.config.get_quiet('Credentials', 'client_secret')
 
         if (self.client_token != current_token and self.client_token is not None):
             self.config.set('Credentials', 'client_token', self.client_token)
-
-        if (self.client_id != current_id and self.client_id is not None):
-            self.config.set('Credentials', 'client_id', self.client_id)
-
-        if (self.client_secret != current_secret and self.client_secret is not None):
-            self.config.set('Credentials', 'client_secret', self.client_secret)
-
-        elif (self.client_id is None):
-            self.config.set('Credentials', 'client_id', 'YOUR_DEVELOPER_CREDS_HERE')
-            self.config.set('Credentials', 'client_secret', 'YOUR_DEVELOPER_CREDS_HERE')
 
             self.config.write(self.config.filehandle)
             self.config.filehandle.flush()
@@ -197,11 +138,11 @@ parser.add_option('-p', '--private',help='Use to post a private gist', action='s
 (opts, args) = parser.parse_args()
 
 #check for authentication
-gist=Gist()
+gist = Gist()
 
 #check the options
 if opts.__dict__['desc'] is not None:
-    description=opts.__dict__['desc']
+    description = opts.__dict__['desc']
 else:
     description = 'A Gist'
 
@@ -210,13 +151,13 @@ if opts.__dict__['private'] is not None:
 else:
     public = True
 
-gist_files=None
+gist_files = None
 if opts.__dict__['files']:
-    content=None
-    gist_files={}
+    content = None
+    gist_files = {}
     for fname in opts.__dict__['files'].split(','):
         with open(fname) as f:
-            gist_files[fname]={'content':f.read()}
+            gist_files[fname] = {'content':f.read()}
 
     print 'Uploading files..'
 
@@ -232,9 +173,9 @@ else:
     print '****',exit_char,'when done ****'
 
     if sys.gettrace() is None:
-        content=sys.stdin.readlines()
+        content = sys.stdin.readlines()
     else:
         print "Detected debugger."
-        content= 'Debug test! From ' + sys.platform
+        content = 'Debug test! From ' + sys.platform
 # Upload gist
 print gist.post_gist(description, public, gist_files, content)

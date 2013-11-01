@@ -82,7 +82,7 @@ class Gist(object):
         :type: str.
         """
         if content is not None:
-            files = {"gist.txt": {"content": content}}
+            files = {"gist.txt": {"content": str(content)}}
         elif gist_files is not None:
             files = gist_files
         else:
@@ -173,7 +173,7 @@ else:
     print '****',exit_char,'when done ****'
 
     if sys.gettrace() is None:
-        content = sys.stdin.readlines()
+        content = ''.join(sys.stdin.readlines()) #Don't do this.
     else:
         print "Detected debugger."
         content = 'Debug test! From ' + sys.platform

@@ -63,7 +63,8 @@ class Gist(object):
             sys.exit(0)
         except Exception as ex:
             print ex.message
-
+	    sys.exit(1)
+	    
     def post_gist(self, description, public, gist_files, content):
         """
         Post a gist, either single text string or a dictionary of files in the form of

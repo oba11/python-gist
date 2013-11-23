@@ -74,7 +74,7 @@ class GitHubAuth(object):
         self.session = new_session
         return self.session
 
-    def authorise_password(self, scopes, username, password):
+    def authorise_password(self, scopes, username, password, OTP = False):
         """
         Get an OAuth token using a GitHub username and password
 
@@ -87,7 +87,13 @@ class GitHubAuth(object):
         :param password: GitHub password
         :type password: str.
         """
-        response = requests.get('https://api.github.com/authorizations', auth=(username, password))
+        headers = None
+        
+	if OTP:
+		otpcode = raw_input('Enter OTP code: ')
+		headers = {'X-Github-OTP': otpcode}	
+		
+        response = requests.get('https://api.github.com/authorizations', auth=(username, password), headers=headers)
 
         if response.ok:
             token_response = self.get_existing_token(response)
@@ -96,7 +102,10 @@ class GitHubAuth(object):
             else:
                 return self.get_new_token(scopes, (username, password))
         elif response.status_code == 401:
-            raise(Exception("Username or password incorrect, try again."),'AuthenticationError')
+            message = response.text #todo, get this as a dict
+            if "OTP" in message:
+            	self.authorise_password(scopes,username,password,True)
+       	    raise(Exception("Username or password incorrect, try again."),'AuthenticationError')
 
     def get_existing_token(self, response):
         """

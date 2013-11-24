@@ -76,6 +76,7 @@ class GitHubAuth(object):
 
     def authorise_password(self, scopes, username, password, OTP = False):
         """
+        TODO: Don't let this recurse, it's too confusing.
         Get an OAuth token using a GitHub username and password
 
         :param scopes: Single or multiple OAuth scopes, comma separated as defined at: http://developer.github.com/v3/oauth/#scopes
@@ -87,25 +88,32 @@ class GitHubAuth(object):
         :param password: GitHub password
         :type password: str.
         """
+        print self
+        print scopes
+        print username
+        print OTP
         headers = None
-        
-	if OTP:
-		otpcode = raw_input('Enter OTP code: ')
-		headers = {'X-Github-OTP': otpcode}	
-		
-        response = requests.get('https://api.github.com/authorizations', auth=(username, password), headers=headers)
+        if OTP:
+            otpcode = raw_input('Enter OTP code: ')
+            headers = {'X-Github-OTP': otpcode}	
+            print 'Sending another request including two factor auth code'
+            response = requests.get('https://api.github.com/authorizations', auth=(username, password), headers=headers)
+        else:
+            print 'Sending a request without a 2 factor auth code first'
+            response = requests.get('https://api.github.com/authorizations', auth=(username, password))
 
         if response.ok:
             token_response = self.get_existing_token(response)
             if token_response is not None:
+                print 'Got existing token'
                 return token_response
             else:
                 return self.get_new_token(scopes, (username, password))
         elif response.status_code == 401:
             message = response.text #todo, get this as a dict
-            if "OTP" in message:
-            	self.authorise_password(scopes,username,password,True)
-       	    raise(Exception("Username or password incorrect, try again."),'AuthenticationError')
+            if ("OTP" in message) and (OTP is False): #we got an OTP response that we haven't seen before
+            	return self.authorise_password(scopes,username,password,True)
+            raise(Exception("Username or password incorrect, try again."),'AuthenticationError')
 
     def get_existing_token(self, response):
         """

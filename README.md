@@ -5,6 +5,10 @@ A command line GitHub gist posting application in Python.
 
 As of July 2013, this uses API tokens.
 
+As of November 2013, this has basic support for 2 Factor Authentication via application - I have not tested the SMS backup.
+
+This application probably needs to be refactored (github_auth.py should not depend on the console/stdout!)
+
 Usage
 =====
 	$ python python-gist.py --help

@@ -88,10 +88,6 @@ class GitHubAuth(object):
         :param password: GitHub password
         :type password: str.
         """
-        print self
-        print scopes
-        print username
-        print OTP
         headers = None
         if OTP:
             otpcode = raw_input('Enter OTP code: ')

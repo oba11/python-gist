@@ -13,6 +13,11 @@ except ImportError:
     print "Please pip install requests"
     sys.exit(1)
 
+finally:
+    version = int(requests.__version__[0])
+    if (version < 2):
+        raise(Exception("Unfortunately I only support requests v2 for now, you have " + requests.__version__))
+
 import json
 from github_auth import GitHubAuth
 

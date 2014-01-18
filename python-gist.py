@@ -6,6 +6,15 @@ import getpass
 import sys
 import optparse
 import os
+import logging
+
+root = logging.getLogger()
+
+ch = logging.StreamHandler(sys.stdout)
+ch.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+root.addHandler(ch)
 
 try:
     import requests
@@ -45,31 +54,40 @@ class Gist(object):
         self.auth = GitHubAuth(app_name="python-gist", app_url="http://github.com/voltagex/python-gist")
 
         #todo, this logic sucks.
+    def authorise(self,use_personal_access_token):
         if (self.client_token is None) and sys.stdin.isatty():
-            self.authorise_password()
+                self.authorise_password(use_personal_access_token)
         elif not sys.stdin.isatty() and self.client_token is None:
-            # In case a pipe is trying to write to us
-            print "Sorry, can't accept anything on stdin until I have some GitHub credentials to work with"
-            sys.exit(1)
+                # In case a pipe is trying to write to us
+                print "Sorry, can't accept anything on stdin until I have some GitHub credentials to work with"
+                sys.exit(1)
         else:
-            print "Loaded saved access token, I'm good to go."
+                print "Loaded saved access token, I'm good to go."
 
-    def authorise_password(self):
+    def authorise_password(self, use_personal_access_token = False):
         """
         Authorise this script via GitHub username and password
         """
-        username = raw_input("Please enter your username: ")
-        password = getpass.getpass("Please enter your password: ")
-
         try:
-            token = self.auth.authorise_password('gist', username, password)
+            username = raw_input("Please enter your username: ")
+            if not use_personal_access_token:
+                password = getpass.getpass("Please enter your password: ")
+                token = self.auth.get_token_with_password('gist', username, password)
+            else:
+                token = getpass.getpass("Please enter your personal access token: ")
+                if not self.auth.check_personal_access_token(token):
+                    raise(Exception("Incorrect token"))
+
             self.client_token = token
             print "Saved your token, start this script again to post gists"
             sys.exit(0)
         except Exception as ex:
             print ex.message
-	    sys.exit(1)
-	    
+        sys.exit(1)
+
+    def twofactor(self,code_type):
+        return raw_input('Enter your 2FA code: ')
+
     def post_gist(self, description, public, gist_files, content):
         """
         Post a gist, either single text string or a dictionary of files in the form of
@@ -135,27 +153,31 @@ if __name__ == "__main__":
 
 # setup options
 parser = optparse.OptionParser()
+parser.add_option('-o', '--oauth',action="store_true",help='Use a Personal Access Token instead of a username/password',dest='oauth')
 parser.add_option('-d', '--description',help='Description for the gist',dest='desc')
 parser.add_option('-f', '--files', help='Comma separated list of file(s) to post as a gist', dest='files')
 parser.add_option('-p', '--private',help='Use to post a private gist', action='store_true',dest='private')
 
+oauth = False
+public = True
 
-#parse
 (opts, args) = parser.parse_args()
 
-#check for authentication
-gist = Gist()
-
 #check the options
-if opts.__dict__['desc'] is not None:
+
+if opts.__dict__['oauth']:
+    oauth = True
+
+if opts.__dict__['desc']:
     description = opts.__dict__['desc']
 else:
-    description = 'A Gist'
+    description = 'python-gist gist'
 
-if opts.__dict__['private'] is not None:
+if opts.__dict__['private']:
     public = False
-else:
-    public = True
+ 
+gist = Gist()
+gist.authorise(oauth)
 
 gist_files = None
 if opts.__dict__['files']:
@@ -164,9 +186,6 @@ if opts.__dict__['files']:
     for fname in opts.__dict__['files'].split(','):
         with open(fname) as f:
             gist_files[fname] = {'content':f.read()}
-
-    print 'Uploading files..'
-
 
 else:
     if sys.platform == 'win32':
@@ -178,10 +197,6 @@ else:
     print '***********************'
     print '****',exit_char,'when done ****'
 
-    if sys.gettrace() is None:
-        content = ''.join(sys.stdin.readlines()) #Don't do this.
-    else:
-        print "Detected debugger."
-        content = 'Debug test! From ' + sys.platform
-# Upload gist
-print gist.post_gist(description, public, gist_files, content)
+    content = ''.join(sys.stdin.readlines()) #Don't do this.
+    
+    print gist.post_gist(description, public, gist_files, content)

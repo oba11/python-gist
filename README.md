@@ -3,11 +3,14 @@ python-gist
 
 A command line GitHub gist posting application in Python. 
 
-As of July 2013, this uses API tokens.
+Your options for authentication:
 
-As of November 2013, this has basic support for 2 Factor Authentication via application - I have not tested the SMS backup.
+* Basic support for 2 Factor Authentication - I have not tested the SMS backup.
 
-This application probably needs to be refactored (github_auth.py should not depend on the console/stdout!)
+* Username/password combos - python-gists will request an authorisation and save a token. See https://github.com/settings/applications
+
+* Personal Access Tokens - these are the same ones you use for git-over-HTTPS if you've got 2FA enabled. See https://github.com/settings/applications, create a new token, then launch python-gist with the -o option
+
 
 Usage
 =====
@@ -16,7 +19,8 @@ Usage
 
 	Options:
 	-h, --help            show this help message and exit
-	-d DESC, --description=DESC
+	-o, --oauth           Use a Personal Access Token instead of a username/password
+	-d DESC, --description="a description"
         Description for the gist
 	-f FILES, --files=FILES
         Comma seperated list of file(s) to post as a gist
@@ -48,9 +52,15 @@ Delete the oauth.cfg file (%AppData%\python-gist on Windows, ~/.config/python-gi
 
 Todos
 =====
-* Add an option to deauthorise the script
+* Add an option to deauthorise/cleanup the script
 * Make the script installable
-* External editor? 
+* Package this for Windows
+* Ability to use an external editor
+* Implement the rest of the GitHub API, in github_auth.py
+* More unit tests
+* Tag an actual release
+* Pin the API use to a version, instead of using the "beta"
+* Python 3 version 
 
 Thanks
 ======

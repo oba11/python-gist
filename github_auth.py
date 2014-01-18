@@ -7,10 +7,12 @@ except ImportError:
     sys.exit(1)
 
 import json
+import logging
 
 class GitHubAuth(object):
     """Class handling authentication to GitHub via OAuth/token request"""
-    def __init__(self, **kwargs): #app_name = None, app_url = None, client_id = None,  client_secret = None, username = None, password = None):
+    def __init__(self, **kwargs): #app_name = None, app_url = None, client_id = None, client_secret = None,
+                                  #username = None, password = None):
         """ Initialise a GitHubAuth object
             Note either client_id and client_secret for OAuth or
             username and password for token request via basic auth
@@ -36,7 +38,9 @@ class GitHubAuth(object):
         self.client_token = kwargs.get('client_token')
         self.username = kwargs.get('username')
         self.password = kwargs.get('password')
-        self.session = None
+        self.scopes = []
+        self.session = requests.session()
+        self.session.headers.update({'User-Agent': self.app_name + " via github_auth.py, see github.com/voltagex/python-gist"})
 
     def get_session_simple(self, scopes=['gist'], username=None, password=None):
         """ Get a requests Session object, as long as either OAuth token auth or username and password is passed in
@@ -66,15 +70,10 @@ class GitHubAuth(object):
         :type token: str.
         """
         auth_header = {"Authorization": str.format("token {0}", token)}
-        if self.session is None:
-            new_session = requests.session()
-            new_session.headers = auth_header
-            new_session.headers['User-Agent'] = self.app_name + " via github_auth.py, see github.com/voltagex/python-gist"
-            new_session.verify = True
-        self.session = new_session
+        self.session.headers.update(auth_header)
         return self.session
 
-    def authorise_password(self, scopes, username, password, OTP = False):
+    def get_token_with_password(self, scopes, username, password, otp_callback=None):
         """
         TODO: Don't let this recurse, it's too confusing.
         Get an OAuth token using a GitHub username and password
@@ -89,28 +88,42 @@ class GitHubAuth(object):
         :type password: str.
         """
         headers = None
-        if OTP:
-            otpcode = raw_input('Enter OTP code: ')
-            headers = {'X-Github-OTP': otpcode}	
-            print 'Sending another request including two factor auth code'
-            response = requests.get('https://api.github.com/authorizations', auth=(username, password), headers=headers)
-        else:
-            print 'Sending a request without a 2 factor auth code first'
-            response = requests.get('https://api.github.com/authorizations', auth=(username, password))
+        logging.log(3,'Sending a request without a 2 factor auth code first')
+        response = self.session.get('https://api.github.com/authorizations', auth=(username, password), headers={})
+        
+        if not self.username:
+            self.username = username
+        if not self.password:
+            self.password = password
+        self.scopes = scopes
 
-        if response.ok:
-            token_response = self.get_existing_token(response)
-            if token_response is not None:
-                print 'Got existing token'
-                return token_response
-            else:
-                return self.get_new_token(scopes, (username, password))
-        elif response.status_code == 401:
+        if not response.ok:
             message = response.text #todo, get this as a dict
-            if ("OTP" in message) and (OTP is False): #we got an OTP response that we haven't seen before
-            	return self.authorise_password(scopes,username,password,True)
-            raise(Exception("Username or password incorrect, try again."),'AuthenticationError')
+            if ("OTP" in message):
+                if (otp_callback):
+                    code_received_via = response.headers['X-GitHub-OTP']
+                    code = otp_callback(code_received_via)
+                    response = self.get_token_with_twofactorauth(code)
+                else:
+                    raise(Exception("GitHub asked for 2FA but no otp_callback was specified"))
+            else: #actually unauthorized/in an error state at this point
+                logging.log(3,"Unauthorised, GitHub returned {0} with {1}",(response.status_code,message))
+                raise(Exception("Username or password incorrect, try again."),'AuthenticationError')
 
+        token_response = self.get_existing_token(response)
+        if token_response is not None:
+            print 'Got existing token'
+            return token_response
+        else:
+            return self.get_new_token()
+
+
+    def get_token_with_twofactorauth(self, code):
+            session.headers.update({'X-Github-OTP', code})
+            logging.log('Sending auth request  for {0} including two factor auth code',(username))
+            response = session.get('https://api.github.com/authorizations', auth=(self.username, self.password), headers=headers)
+       
+        
     def get_existing_token(self, response):
         """
         Get an existing OAuth token after a request to https://api.github.com/authorizations
@@ -140,3 +153,6 @@ class GitHubAuth(object):
            return response.json()['token']
         else:
             raise(Exception(str.format("Couldn't get client token - {0}: {1}", response.status_code, response.text)),'AuthenticationError') #yes, this is likely to be a json response but I want to make sure I see the error
+
+    def check_personal_access_token(self, token):
+        return self.session.get('https://api.github.com/user',auth=(token,'x-oauth-basic')).ok

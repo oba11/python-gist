@@ -32,3 +32,5 @@ pip-log.txt
 #App config files
 *.cfg
 
+env/
+*.user

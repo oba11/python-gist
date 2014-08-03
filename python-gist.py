@@ -88,6 +88,44 @@ class Gist(object):
     def twofactor(self,code_type):
         return raw_input('Enter your 2FA code: ')
 
+    def patch_gist(self, description, public, gist_files, gist_id, content):
+        """
+        Patch a gist, either single text string or a dictionary of files in the form of
+        {"filename.ext": {"content": "some text"}}
+
+        :param description: Gist description
+        :type: str.
+
+        :param public: Post a public or private Gist
+        :type: bool.
+
+        :param gist_files: dictionary of files for Gist
+        :type: dict.
+
+        :param content: string content for Gist
+        :type: str.
+        """
+        if gist_files is not None:
+            files = gist_files
+        elif content is not None:
+            files = {"gist.txt": {"content": str(content)}}
+        else:
+            raise ("Either content or gist_files must be set")
+        payload = {
+            "description": description,
+            "public": public,
+            "files": files,
+        }
+
+        authorised_client = self.auth.get_session(self.client_token)
+        response = authorised_client.patch("https://api.github.com/gists/"+gist_id, data=json.dumps(payload))
+
+        if response.ok:
+            return response.json()['html_url']
+        else:
+            print "Error " + response.text
+            return
+
     def post_gist(self, description, public, gist_files, content):
         """
         Post a gist, either single text string or a dictionary of files in the form of
@@ -105,10 +143,10 @@ class Gist(object):
         :param content: string content for Gist
         :type: str.
         """
-        if content is not None:
-            files = {"gist.txt": {"content": str(content)}}
-        elif gist_files is not None:
+        if gist_files is not None:
             files = gist_files
+        elif content is not None:
+            files = {"gist.txt": {"content": str(content)}}
         else:
             raise ("Either content or gist_files must be set")
         payload = {
@@ -156,10 +194,14 @@ parser = optparse.OptionParser()
 parser.add_option('-o', '--oauth',action="store_true",help='Use a Personal Access Token instead of a username/password',dest='oauth')
 parser.add_option('-d', '--description',help='Description for the gist',dest='desc')
 parser.add_option('-f', '--files', help='Comma separated list of file(s) to post as a gist', dest='files')
+parser.add_option('-u', '--update', help='Option to Update an existing gist file', action='store_true',dest='update')
+parser.add_option('-g', '--gist_id', help='Gist ID in case there is a need to update existing file', dest='gist_id')
 parser.add_option('-p', '--private',help='Use to post a private gist', action='store_true',dest='private')
 
 oauth = False
 public = True
+update = False
+gist_id = None
 
 (opts, args) = parser.parse_args()
 
@@ -167,6 +209,10 @@ public = True
 
 if opts.__dict__['oauth']:
     oauth = True
+
+if opts.__dict__['update']:
+    update = True
+    gist_id = opts.__dict__['gist_id']
 
 if opts.__dict__['desc']:
     description = opts.__dict__['desc']
@@ -186,6 +232,7 @@ if opts.__dict__['files']:
     for fname in opts.__dict__['files'].split(','):
         with open(fname) as f:
             gist_files[fname] = {'content':f.read()}
+	    content = gist_files[fname]['content']
 
 else:
     if sys.platform == 'win32':
@@ -198,5 +245,9 @@ else:
     print '****',exit_char,'when done ****'
 
     content = ''.join(sys.stdin.readlines()) #Don't do this.
-    
+
+if opts.__dict__['update']:
+    print gist.patch_gist(description, public, gist_files, gist_id, content)
+
+else: 
     print gist.post_gist(description, public, gist_files, content)
